@@ -1,4 +1,35 @@
-github: EmanuelCatania
-ko_fi: emapupi
-custom:
-  - https://cafecito.app/emapupi
+name: Build Mu‑97k‑Client‑Source main.exe
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # 手动触发构建
+
+jobs:
+  build:
+    runs-on: windows‑latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # 配置MSVC x86 + 自动安装MFC ATL（本项目必须MFC）
+      - name: Init MSVC x86 with MFC
+        uses: ilammy/msvc‑dev‑cmd@v1
+        with:
+          arch: x86
+          msvc‑version: "14.3"
+          install‑mfc: true
+
+      # 直接msbuild，项目内部已经写好Deps路径，不需要手动设置INCLUDE/LIB
+      - name: Build Solution Release Win32
+        run: |
+          msbuild Mu.sln /p:Configuration=Release /p:Platform=Win32 /m
+        shell: pwsh
+
+      # 编译输出在 x86/Release/main.exe
+      - name: Upload Artifact main.exe
+        uses: actions/upload‑artifact@v4
+        with:
+          name: main‑exe‑release
+          path: x86/Release/main.exe
